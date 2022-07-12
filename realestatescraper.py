@@ -1,3 +1,9 @@
+"""
+realestatescraper.py
+scrape ads of apartments for sale from https://www.komo.co.il,
+print results, and export csv file.
+"""
+
 from bs4 import BeautifulSoup
 import requests
 import logging
@@ -17,6 +23,10 @@ TAIL_SALE_URL_SUBSTRING = '?nehes=1&cityName='
 PAGE_SUBSTRING = '?currPage'
 HEAD_PAGE_URL = 'https://www.komo.co.il/code/nadlan/apartments-for-sale.asp?currPage='
 TAIL_PAGE_URL = '&subLuachNum=2&nehes=1&cityName='
+
+COLUMNS_TO_DROP = ['index', 4]
+
+EXPORT_FILENAME = 'realestate_data.csv'
 
 # logger setup
 logger = logging.getLogger('scraper')
@@ -63,9 +73,10 @@ def parse_response(r):
 
 def get_citynames(soup):
     """
-
-    :param soup:
-    :return:
+    take soup object from URL of page with list of cities and links (KOMO_LIST),
+    return list of city names for which there are apartment sale ads.
+    :param soup: parsed soup object from URL of page with list of cities and links (KOMO_LIST)
+    :return: list of citynames
     """
     citynames = []
     for link in soup.find_all('a'):
@@ -78,9 +89,10 @@ def get_citynames(soup):
 
 def get_urls(citynames):
     """
-
-    :param citynames:
-    :return:
+    take list of citynames and build URLs according to website's patterns.
+    get quoted city name, as city names are in Hebrew.
+    :param citynames: list of citynames
+    :return: list of tuples. In each tuple (cityname, cityname_quoted and url)
     """
     cities_urls = []
     for cityname in citynames:
@@ -93,9 +105,12 @@ def get_urls(citynames):
 
 def get_pages(soup):
     """
-
-    :param soup:
-    :return:
+    take parsed soup object of first page of city's website,
+    get list of all other pages with ads.
+    Example: pages list ['2', '3', '4'] indicate that there are three pages
+    besides the first one for the given city.
+    :param soup: parsed soup object of first page of city's website
+    :return: pages list
     """
     ls = []
     for href in soup.find_all('a'):
@@ -106,29 +121,32 @@ def get_pages(soup):
     return pages
 
 
-def get_url_for_page(page, cityname):
+def get_url_for_page(page, cityname_quoted):
     """
-
-    :param page:
-    :param cityname:
-    :return:
+    take page number and cityname_quoted and build url for the page.
+    :param page: page number
+    :param cityname_quoted: quoted city name, as city names are Hebrew.
+    e.g. ירושלים -> %D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D
+    :return: url for the page
     """
-    page_url = ''.join([HEAD_PAGE_URL, page, TAIL_PAGE_URL, cityname])
+    page_url = ''.join([HEAD_PAGE_URL, page, TAIL_PAGE_URL, cityname_quoted])
 
     return page_url
 
 
 def get_df_from_url(url, cityname):
     """
-
-    :param url:
-    :return:
+    take url and city name, read the webpage into a pandas df,
+    clean df columns, rename columns, insert column with city name
+    :param url: url of website with ads
+    :param cityname: city name
+    :return: pandas df with ads data
     """
     dfs = pd.read_html(url, attrs={'class': CLASS}, flavor=FLAVOR)
     df_list = [df[0] for df in dfs]
     df = pd.DataFrame(df_list)
     df = df.reset_index()
-    df = df.drop(columns=['index', 4])
+    df = df.drop(columns=COLUMNS_TO_DROP)
     df.columns = ['pictures', 'description1', 'price', 'description2']
     df['cityname'] = cityname
     df = df[['cityname', 'pictures', 'description1', 'price', 'description2']]
@@ -138,14 +156,14 @@ def get_df_from_url(url, cityname):
 
 def print_df(df, cityname):
     """
-
-    :param df:
-    :return:
+    take df and its city name, print results.
+    :param df: df with ads data
+    :param cityname: city name
     """
     print(f'city name: {cityname}')
     for i in range(len(df)):
         print(f'Record number: {i+1} for city {cityname}')
-        for col in df.columns[1:]:
+        for col in df.columns[1:]:  # first column is 'city name', already printed.
             print(col, ': ', df.iloc[i][col])
         print('\n')
 
@@ -178,34 +196,27 @@ def main():
     for cityname, cityname_quoted, url in cities_urls:
         print(f'Loading data for city: {cityname}...')
         df_list = []
-        df = pd.DataFrame()
         try:
             df = get_df_from_url(url, cityname)
             logger.info(f'Got df from {url} with {len(df)} rows.')
+            df_list.append(df)
         except Exception as e:
             logger.error(f'Error getting df from {url}. {str(e)}')
             continue
-
-        if not df.empty:
-            df_list.append(df)
-
         r = get_response(url)
         if r:
             logger.info(f'Successful response.{r.url}')
         else:
             logger.error(f'Request error: {r}.{r.url}')
             continue
-
         soup = parse_response(r)
         if soup:
             logger.info(f'Successful parsing.{r.url}')
         else:
             logger.error(f'Parsing error. {r.url}')
-
         pages = get_pages(soup)
         if pages:
             logger.info(f'Got pages for {url}')
-
         for page in pages:
             try:
                 page_url = get_url_for_page(page, cityname_quoted)
@@ -213,15 +224,12 @@ def main():
             except Exception as e:
                 logger.error(f'Error getting url for page {page}. {str(e)}')
                 continue
-            df = pd.DataFrame()
             try:
                 df = get_df_from_url(page_url, cityname)
                 logger.info(f'Got df for page {page}.')
+                df_list.append(df)
             except Exception as e:
                 logger.error(f'Error getting df for page {page}. {str(e)}')
-
-            if not df.empty:
-                df_list.append(df)
 
         # now we have city_df
         city_df = pd.concat(df_list)
@@ -231,7 +239,7 @@ def main():
 
     logger.info(f'Finished scraping.')
 
-    cities_df.to_csv('realestate_data.csv')
+    cities_df.to_csv(EXPORT_FILENAME)
 
 
 if __name__ == '__main__':
