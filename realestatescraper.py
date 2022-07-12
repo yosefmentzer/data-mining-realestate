@@ -231,7 +231,6 @@ def main():
             except Exception as e:
                 logger.error(f'Error getting df for page {page}. {str(e)}')
 
-        # now we have city_df
         city_df = pd.concat(df_list)
         print_df(city_df, cityname)
         cities_df_list.append(city_df)
