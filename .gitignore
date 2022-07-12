@@ -125,3 +125,6 @@ __pycache__/*
 # LOG
 *.log
 
+# CSV
+*.csv
+
