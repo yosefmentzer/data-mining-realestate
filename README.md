@@ -34,27 +34,27 @@ realestatescraper.py and requirements.txt can be downloaded from https://github.
 ## Usage instructions
 
 In order to scrape the data of the apartments' selling ads:
-a. Download realestatescraper.py and requirements.txt from https://github.com/yosefmentzer/data-mining-realestate
-b. Make sure that all required libraries which are witten in the requirements.txt file are installed on your computer
-c. Run the program
+- Download realestatescraper.py and requirements.txt from https://github.com/yosefmentzer/data-mining-realestate
+- Make sure that all required libraries which are witten in the requirements.txt file are installed on your computer
+- Run the program
 
 
 ## The process that the program runs "behind the scenes":
 
 After running the program,
-a. The program accesses komo.co.il and collects all city names from the site's "quick-links" (page from the site).  
-b. For each city (from the city list), the program builds a URL, scrapes the data from the first page and identifies how many pages are left. 
-c. If the city has several pages of ads, the program generates a different url for each page and scrapes the data from each page.
-d. The program parses the data into a pandas DataFrame.
-e. After finishing scraping and parsing the data for a city, the data in the city's DataFrame is printed to standard output.
-f. After all cities' pages are scraped, the DataFrames for each city are concatenated into one aggregated DataFrame and exported as a csv file.
-g. All process is monitored with a logging file.
+- The program accesses komo.co.il and collects all city names from the site's "quick-links" (page from the site).  
+- For each city (from the city list), the program builds a URL, scrapes the data from the first page and identifies how many pages are left. 
+- If the city has several pages of ads, the program generates a different url for each page and scrapes the data from each page.
+- The program parses the data into a pandas DataFrame.
+- After finishing scraping and parsing the data for a city, the data in the city's DataFrame is printed to standard output.
+- After all cities' pages are scraped, the DataFrames for each city are concatenated into one aggregated DataFrame and exported as a csv file.
+- All process is monitored with a logging file.
 
 
 ## Future features
 
-a. Track after changes in ads (new ads, price change...)
-b. Parse the description strings into relevant elements (street, size, # rooms...)
+- Track after changes in ads (new ads, price change...)
+- Parse the description strings into relevant elements (street, size, # rooms...)
 
 
 
