@@ -1,64 +1,70 @@
-# realestatescraper.py
-## Apartments' selling ads' scraper program - from the site www.komo.co.il 
+# Real Estate scraper
+Real Estate scraper is a program that scrapes ads from [KOMO](https://www.komo.co.il) and builds an SQL database with detailed information on each ad. Cool!
 
+## Usage
+Preparation:
+- Download realestatescraper.py and requirements.txt from https://github.com/yosefmentzer/data-mining-realestate.
+- Make sure that all required libraries in the requirements.txt file are installed in your system.
 
-realestatescraper.py is a program that helps the user to scrape all apartments' selling ads from the site komo.co.il. 
-By running the program, the user gets a csv file, containing all ads of apartments for sale, that he can easily manipulate on his computer.  
+From the terminal:
+```bash
+python realestatescraper.py -p 1 -a 2 -c "Tel Aviv Yaffo"
+```
+Optional parameters:
+-p: property type. 1 for regular apartment, 2 for two-family building, etc. See full list of property types in the help menu:
+```bash
+python realestatescraper.py --help
+```
+-a: advertisement type. 1 for sale, 2 for rent.
+-c: city name in English. In case there is a misspelling mismatch, the whole city name list will be printed to standard output.
+
+## Export
+The program prints to standard output the number of result webpages for each search and the total number of ads scraped and parsed.  
+It exports a JSON file with a list of dictionaries. Each dictionary contains the details for one ad.
+A log file is also generated during the program run.
+
+## To do
+Next version will create a SQL database and populate it, according to the Entity Relationship Diagram in ERD.pdf.
 
 
 ## Features
 
-The program exports data of all ads of apartments for sale at the site komo.co.il, to a csv file. 
-The data scraped from each apartment's ad are:
-- (unnamed column): index of the apartment in the page from which the data were scraped.
-- cityname: The city of the apartment.
-- pictures: how many pictures are connected to the ad.
-- description1: address of the apartment, number of rooms.
-- price: asked price of the apartment
-- description2: size of the apartment (e.g. 85m2), number of rooms, floor (e.g. 3rd floor).
-The description columns are strings scraped 'as is', without further processing. So, for example, the number of rooms appear in both descripion1 and description2.
-Next version will include parsing of these columns.
+The data scraped from each ad are:
+- city
+- address
+- rooms
+- size in $m^2$
+- floor
+- floors in bluiding
+- number of pictures
+- entry date
+- condo fee
+- city property tax (arnona)
+- contact type: private individual or real estate agent
+    - if agent: name, office, phone
+- price: dated so user can check evolution
+- booleans:
+    - safe room
+    - balcony
+    - sotoreroom
+    - security bars
+    - air conditioning
+    - furniture
+    - accessibility
+    - elevator
+    - parking
+    - roommate compatible
+    - pets allowed
+    - sun boiler
 
-A log file is also generated during the program run.
+## What the program does "Behind the scenes"
 
-## Requirements
-
-The libraries that are required for using realestatescraper.py are listed in the requirements.txt file.
-
-
-## Installation
-
-realestatescraper.py and requirements.txt can be downloaded from https://github.com/yosefmentzer/data-mining-realestate
-
-
-## Usage instructions
-
-In order to scrape the data of the apartments' selling ads:
-- Download realestatescraper.py and requirements.txt from https://github.com/yosefmentzer/data-mining-realestate
-- Make sure that all required libraries which are witten in the requirements.txt file are installed on your computer
-- Run the program
-
-
-## The process that the program runs "behind the scenes":
-
-After running the program,
-- The program accesses komo.co.il and collects all city names from the site's "quick-links" (page from the site).  
-- For each city (from the city list), the program builds a URL, scrapes the data from the first page and identifies how many pages are left. 
-- If the city has several pages of ads, the program generates a different url for each page and scrapes the data from each page.
-- The program parses the data into a pandas DataFrame.
-- After finishing scraping and parsing the data for a city, the data in the city's DataFrame is printed to standard output.
-- After all cities' pages are scraped, the DataFrames for each city are concatenated into one aggregated DataFrame and exported as a csv file.
-- All process is monitored with a logging file.
-
-
-## Future features
-
-- Track after changes in ads (new ads, price change...)
-- Parse the description strings into relevant elements (street, size, # rooms...)
-
-
+1. check user parameters.
+2. get all quicklink pages, with one link per city for a given (property_type, ad_type) pair. For example, there may be 96 cities with ads for the search: 'regular_apartment, for sale'.
+3. get the first result page with links for detailed ad pages for a given city. This page has info on other result pages, so we can scrape all result pages. For example, there may be 7 result pages for the search: 'regular_apartment, for sale in Jerusalem'.
+4. get detailed ad pages. There are up to 20 ad links per 2nd-level page.
+5. parse pages, extract data.
+6. export JSON with results.
 
 ## Contact Info
-
 Yosef Mentzer - yosef.mentzer@gmail.com
-Avishai Yossipovitch - aviyossi@gmail.com

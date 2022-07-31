@@ -128,3 +128,18 @@ __pycache__/*
 # CSV
 *.csv
 
+# meetings folder
+meetings/
+
+# test folder
+test/
+
+# old folder
+old/
+
+# SQL folder
+SQL/
+
+# docs folder
+docs/
+
