@@ -7,8 +7,8 @@ Real Estate scraper is a program that scrapes ads from [KOMO](https://www.komo.c
 - prepare a *credentials.ini* file with the following structure:
 
 > [DB]
-host = localhost
-user = root
+host = localhost  
+user = root  
 password = your_MySQL_password
 
 If your host or user is diffferent, set up the credentials.ini file accordingly.
@@ -19,7 +19,7 @@ From the terminal:
 ```bash
 python createdb.py
 ```
-update.py has code to update the database and config.py has configuration/internal variables. They will be called by realestatescraper.py, so you don't have to worry about them. Just have them in your system. .
+update.py has code to update the database and config.py has configuration/internal variables. They will be called by realestatescraper.py, so you don't have to worry about them. Just have them on your system.
 
 ## Usage
 From the terminal:
