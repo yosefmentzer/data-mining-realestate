@@ -1,9 +1,11 @@
 """configuration file for Real Estate scraper"""
 
+DEFAULT_TSIZE = 300
 
 BOOLEAN_FEATURES = ['mamad', 'mirpeset', 'mahsan', 'soragim', 'mizug',
                     'riut', 'gisha', 'maalit', 'hania', 'shutafim',
                     'pets', 'boiler']
+
 PROPERTY_TYPES = {1: 'regular_apartment',
                   2: 'two_family',
                   3: 'penthouse',
@@ -86,7 +88,7 @@ CITIES = {'Jerusalem': 'ירושלים',
           'Natzeret': 'נצרת',
           'Kiryat Malachi': 'קריית מלאכי',
           'Yokneam Illit': 'יקנעם עילית',
-          'Hatzor HaGlilit': 'חצור הגלילית',
+          'Hatzor Haglilit': 'חצור הגלילית',
           'Tirat Carmel': 'טירת כרמל',
           'Tzur Hadassah': 'צור הדסה',
           'Elad': 'אלעד',

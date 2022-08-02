@@ -143,3 +143,6 @@ SQL/
 # docs folder
 docs/
 
+# credentials
+credentials.ini
+
