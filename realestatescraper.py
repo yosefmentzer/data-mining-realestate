@@ -20,6 +20,7 @@ import configparser
 
 import config
 import updatedb
+import queryapi
 
 
 # logger setup
@@ -48,6 +49,9 @@ def parse_args():
     parser.add_argument('-c', '--city', type=str, help='city name in English. e.g. Jerusalem')
     parser.add_argument('-t', '--tsize', default=config.DEFAULT_TSIZE, type=int,
                         help=f'transaction size: number of records per transaction in SQL DB')
+    parser.add_argument('--api', action='store_true', help='flag: download demographic data from API')
+    parser.add_argument('--onlyapi', action='store_true',
+                        help='flag: only download demographic data from API and do not scrape')
     args = parser.parse_args()
 
     return args
@@ -97,7 +101,11 @@ def check_args():
         return
     tsize = args.tsize
 
-    return property_types, ad_types, city_param, tsize
+    api = args.api
+
+    onlyapi = args.onlyapi
+
+    return property_types, ad_types, city_param, tsize, api, onlyapi
 
 
 def get_quicklinks(property_types, ad_types):
@@ -378,7 +386,7 @@ def scrape():
 
     # check CLI arguments and return corresponding variables.
     if check_args():
-        property_types, ad_types, city_param, tsize = check_args()
+        property_types, ad_types, city_param, tsize, api, onlyapi = check_args()
     else:
         # if check_args() returns None, there was an issue with CLI args,
         # a proper message was printed to stdout and the scraper will close.
@@ -386,6 +394,10 @@ def scrape():
     print('This is the Real Estate scraper. \n'
           'Running time may vary from a few minutes to dozens of minutes depending on the parameters provided.\n'
           'Scraping all the site for all possible property types, ad types and cities may take a few hours.\n')
+    if onlyapi:
+        print('You chose to get data via API and update the database alone.\n'
+              'The program will not scrape ads.')
+        return None, tsize, True, True
 
     # the date will be registered.
     today = date.today().isoformat()
@@ -485,18 +497,18 @@ def scrape():
                     details = parse_detailed_ad_page(s, ad_id, property_type, ad_type, today)
                     details_dic[ad_id] = details
 
-    return details_dic, tsize
+    return details_dic, tsize, api, onlyapi
 
 
 def main():
-    details_dic, tsize = scrape()
+    details_dic, tsize, api, onlyapi = scrape()
     if details_dic:
         print(f'A total of {len(details_dic)} ads were scraped.')
-
         cred = configparser.ConfigParser()
         cred.read('credentials.ini')
         connection = updatedb.connect(cred)
         updatedb.use_db(connection)
+
         t = 0
         for ad_id, result in details_dic.items():
             if updatedb.query_db(f'SELECT id FROM properties WHERE website_id = {int(ad_id)}', connection):
@@ -515,6 +527,23 @@ def main():
             connection.commit()
             logger.info(f'Commited {t} transactions.')
 
+        connection.close()
+    if api:
+        t = 0
+        cred = configparser.ConfigParser()
+        cred.read('credentials.ini')
+        connection = updatedb.connect(cred)
+        updatedb.use_db(connection)
+        api_records = queryapi.get_all_records(config.API_URL, config.API_DOMAIN)
+        for record in api_records:
+            t = updatedb.update_or_insert_demographics(record, connection, t)
+            if t > tsize:
+                connection.commit()
+                logger.info(f'Commited {t} transactions.')
+                t = 0
+        if t:
+            connection.commit()
+            logger.info(f'Commited {t} transactions.')
         connection.close()
 
 
