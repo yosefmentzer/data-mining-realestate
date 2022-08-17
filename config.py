@@ -18,6 +18,7 @@ PROPERTY_TYPES = {1: 'regular_apartment',
 AD_TYPES = {1: 'rent',
             2: 'sale'}
 
+# preloaded cities with Hebrew names as they appear in KOMO website and English names for user CLI
 CITIES = {'Jerusalem': 'ירושלים',
           'Tel Aviv Yaffo': 'תל אביב יפו',
           'Haifa': 'חיפה',
@@ -115,6 +116,7 @@ CITIES = {'Jerusalem': 'ירושלים',
           'Caesarea': 'קיסריה',
           'Gedera': 'גדרה'}
 
+# dictionary mapping spelling differences of cities in API records vs. preloaded cities in KOMO website
 CITIES_API_KOMO = {'בני עי"ש': 'בני עייש',
                    'בנימינה-גבעת עדה': 'בנימינה-גבעת עדה*',
                    'מודיעין-מכבים-רעות': 'מודיעין-מכבים-רעות*',

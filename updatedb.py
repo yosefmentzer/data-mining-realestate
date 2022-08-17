@@ -1,5 +1,5 @@
 """
-module to update Mysql database for Real Estate scraper project, given a list of results.
+module to update Mysql database for Real Estate scraper project, given a list of results (both scraping and API).
 This module defines functions to be used by realestatescraper.py, thus there is no main() function.
 """
 
@@ -98,12 +98,24 @@ def update_property(website_id, updates, connection):
 
 def update_property_details(property_id, updates, connection):
     """ update record in properties table.
-    Use case example: property details were edited, description was corrected, etc. """
+    Use case example: property details were edited, description was corrected, etc.
+    Strings such as fields 'address' or 'entry_date' may contain (single or double) quotes,
+    and numerical values are not surrounded by quotes in the SQL query,
+    so we have to treat them separately.
+    """
     with connection.cursor() as cursor:
         sql_head = 'UPDATE property_details SET '
-        sql_middle = ','.join([f'{column} = {value}' for column, value in updates.items()])
+
+        sql_middle_l1 = [f"""{column} = '{value}' """ for column, value in updates.items()
+                         if (isinstance(value, str) and ('"' in value))]
+        sql_middle_l2 = [f"""{column} = "{value}" """ for column, value in updates.items()
+                         if (isinstance(value, str) and ('"' not in value))]
+        sql_middle_l3 = [f"""{column} = {value} """ for column, value in updates.items()
+                         if not isinstance(value, str)]
+        sql_middle = ','.join(sql_middle_l1 + sql_middle_l2 + sql_middle_l3)
+
         sql_tail = f' WHERE property_id = {property_id}'
-        cursor.execute("".join([sql_head, sql_middle, sql_tail]))
+        cursor.execute(''.join([sql_head, sql_middle, sql_tail]))
 
 
 def update_demographics(city_id, updates, connection):
@@ -323,7 +335,15 @@ def update_current_add(website_id, result, connection, t):
 
 
 def get_demographics_data(record, connection):
-
+    """
+    for a given record from demographics API query,
+    if the city is in DB cities table (city is relevant),
+    get city_id and return data dictionary with data to be inserted/updated into the DB.
+    If API record is of a city/ishuv that is not relevant, return None.
+    :param record: record from demographics API query
+    :param connection: connection instance
+    :return: data dictionary or None
+    """
     city_api_name = record['שם_ישוב'].strip()
     if city_api_name in config.CITIES_API_KOMO:
         name_heb = config.CITIES_API_KOMO[city_api_name]
@@ -351,6 +371,15 @@ def get_demographics_data(record, connection):
 
 
 def update_or_insert_demographics(record, connection, t):
+    """
+    for a given record from API query,
+    if record is of a relevant city (city that appears in DB cities table),
+    insert (or update) data into DB demographics table.
+    :param record: record from API query
+    :param connection: connection instance
+    :param t: transaction count
+    :return: t
+    """
     data = get_demographics_data(record, connection)
     if data:
         city_id = data['city_id']
