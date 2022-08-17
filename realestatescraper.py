@@ -2,6 +2,7 @@
 Real Estate scraper: program to scrape real estate ads from https://www.komo.co.il,
 This module scrapes details for each ad for a search according to CLI parameters,
 and populates a SQL database, storing only new data.
+Module also queries data.gov.il API, gets demographics data and populate demographics table in database.
 """
 
 
@@ -20,6 +21,7 @@ import configparser
 
 import config
 import updatedb
+import queryapi
 
 
 # logger setup
@@ -48,6 +50,10 @@ def parse_args():
     parser.add_argument('-c', '--city', type=str, help='city name in English. e.g. Jerusalem')
     parser.add_argument('-t', '--tsize', default=config.DEFAULT_TSIZE, type=int,
                         help=f'transaction size: number of records per transaction in SQL DB')
+    parser.add_argument('--api', action='store_true', help='flag: download demographic data from API')
+    parser.add_argument('--onlyapi', action='store_true',
+                        help='flag: only download demographic data from API and do not scrape.\n'
+                             'All scraping-related params will be ignored.')
     args = parser.parse_args()
 
     return args
@@ -57,11 +63,14 @@ def check_args():
     """
     Check CLI arguments returned by parse_args().
     If any argument is invalid, print message and return None.
-    :return: property_types, ad_types, city_param, tsize
+    :return: property_types, ad_types, city_param, tsize, api, onlyapi
     property_type chosen by user in CLI or all config.PROPERTY_TYPES if no user param.
     ad_type chosen by user in CLI or all config.AD_TYPES if no user param.
     city_param chosen by user in CLI or None if no user param (in this case we'll scrape all cities).
     tsize chosen by user in CLI or default value if no user param.
+    api is Boolean reflecting user decision to query demographics API or not. Default is False.
+    onlyapi is Boolean reflecting user decision to **only** query demographics API or not.
+    In this case all scraping-related params are ignored. Default is False.
     """
     args = parse_args()
 
@@ -96,8 +105,14 @@ def check_args():
         print('The transaction size informed is not valid. Please try again.')
         return
     tsize = args.tsize
+    api = args.api
+    onlyapi = args.onlyapi
+    if onlyapi:
+        print('You chose to only query the API and not to scrape ads.\n'
+              'In case you entered valid scraping-related parameters, they will be ignored.\n')
+        api = True
 
-    return property_types, ad_types, city_param, tsize
+    return property_types, ad_types, city_param, tsize, api, onlyapi
 
 
 def get_quicklinks(property_types, ad_types):
@@ -368,22 +383,15 @@ def get_agent_details(luachnum, modaanum):
     return agent_details
 
 
-def scrape():
+def scrape(property_types, ad_types, city_param):
     """
-    this is a wrapper function to perform the scraping activity as a whole,
-    from getting CLI params to returning a dictionary with dictionaries of ad details.
-    :return: dictionary of dictionaries {'ad_id': details_dictionary}
-             and parameter tsize (transaction size for SQL database update).
+    this function performs the scraping activity.
+    :param property_types: property types to scrape.
+    :param ad_types: advertisement types to scrape.
+    :param city_param: city to scrape (if not provided, scrape all cities).
+    :return: dictionary of dictionaries {'ad_id': details_dictionary},
     """
-
-    # check CLI arguments and return corresponding variables.
-    if check_args():
-        property_types, ad_types, city_param, tsize = check_args()
-    else:
-        # if check_args() returns None, there was an issue with CLI args,
-        # a proper message was printed to stdout and the scraper will close.
-        return
-    print('This is the Real Estate scraper. \n'
+    print('This is the Real Estate scraper.\n'
           'Running time may vary from a few minutes to dozens of minutes depending on the parameters provided.\n'
           'Scraping all the site for all possible property types, ad types and cities may take a few hours.\n')
 
@@ -416,11 +424,12 @@ def scrape():
 
         city_urls = get_city_urls(city_param, property_type, soup)  # dictionary {cityname: url}
         if not city_urls:
-            print('This search did not match any result page in the website.\nTry again with different parameters.')
+            print('This search did not match any result page in the website.\n'
+                  'Try again with different parameters.\n')
             return
         city_urls_inv = {v: k for k, v in city_urls.items()}
 
-        print(f'Scraping {len(city_urls)} page(s) for '
+        print(f'Scraping {len(city_urls)} city page(s) for '
               f'{config.PROPERTY_TYPES[property_type], config.AD_TYPES[ad_type]}.\n'
               f'Please wait...')
 
@@ -485,37 +494,81 @@ def scrape():
                     details = parse_detailed_ad_page(s, ad_id, property_type, ad_type, today)
                     details_dic[ad_id] = details
 
-    return details_dic, tsize
+    return details_dic
+
+
+def feed_db_after_scraping(details_dic, tsize):
+    """
+    Take a dictionary with scraping results, and feed the database,
+    inserting new records or updating current records.
+    commit transactions according to transaction size.
+    :param details_dic: dictionary with scraping results
+    :param tsize: transaction size (defined by user or default value)
+    """
+    print(f'A total of {len(details_dic)} ads were scraped.\n')
+    cred = configparser.ConfigParser()
+    cred.read('credentials.ini')
+    connection = updatedb.connect(cred)
+    updatedb.use_db(connection)
+
+    t = 0
+    for ad_id, result in details_dic.items():
+        if updatedb.query_db(f'SELECT id FROM properties WHERE website_id = {int(ad_id)}', connection):
+            t = updatedb.update_current_add(int(ad_id), result, connection, t)
+            if t > tsize:
+                connection.commit()
+                logger.info(f'Commited {t} transactions.')
+                t = 0
+        else:
+            t = updatedb.insert_new_ad(ad_id, result, connection, t)
+            if t > tsize:
+                connection.commit()
+                logger.info(f'Commited {t} transactions.')
+                t = 0
+    if t:
+        connection.commit()
+        logger.info(f'Commited {t} transactions.')
+
+    connection.close()
+
+
+def query_api_feed_db(tsize):
+    """
+    query API, get relevant results and feed the database,
+    inserting new records or updating current records.
+    commit transactions according to transaction size.
+    :param tsize: transaction size (defined by user or default value)
+    """
+    t = 0
+    cred = configparser.ConfigParser()
+    cred.read('credentials.ini')
+    connection = updatedb.connect(cred)
+    updatedb.use_db(connection)
+    api_records = queryapi.get_all_records(config.API_URL, config.API_DOMAIN)
+    for record in api_records:
+        t = updatedb.update_or_insert_demographics(record, connection, t)
+        if t > tsize:
+            connection.commit()
+            logger.info(f'Commited {t} transactions.')
+            t = 0
+    if t:
+        connection.commit()
+        logger.info(f'Commited {t} transactions.')
+    connection.close()
 
 
 def main():
-    details_dic, tsize = scrape()
-    if details_dic:
-        print(f'A total of {len(details_dic)} ads were scraped.')
-
-        cred = configparser.ConfigParser()
-        cred.read('credentials.ini')
-        connection = updatedb.connect(cred)
-        updatedb.use_db(connection)
-        t = 0
-        for ad_id, result in details_dic.items():
-            if updatedb.query_db(f'SELECT id FROM properties WHERE website_id = {int(ad_id)}', connection):
-                t = updatedb.update_current_add(int(ad_id), result, connection, t)
-                if t > tsize:
-                    connection.commit()
-                    logger.info(f'Commited {t} transactions.')
-                    t = 0
-            else:
-                t = updatedb.insert_new_ad(ad_id, result, connection, t)
-                if t > tsize:
-                    connection.commit()
-                    logger.info(f'Commited {t} transactions.')
-                    t = 0
-        if t:
-            connection.commit()
-            logger.info(f'Commited {t} transactions.')
-
-        connection.close()
+    check_args_result = check_args()
+    if check_args_result:
+        property_types, ad_types, city_param, tsize, api, onlyapi = check_args_result
+    else:
+        return
+    if not onlyapi:
+        details_dic = scrape(property_types, ad_types, city_param)
+        if details_dic:
+            feed_db_after_scraping(details_dic, tsize)
+    if api:
+        query_api_feed_db(tsize)
 
 
 if __name__ == '__main__':

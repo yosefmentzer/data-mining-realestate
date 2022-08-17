@@ -18,6 +18,7 @@ PROPERTY_TYPES = {1: 'regular_apartment',
 AD_TYPES = {1: 'rent',
             2: 'sale'}
 
+# preloaded cities with Hebrew names as they appear in KOMO website and English names for user CLI
 CITIES = {'Jerusalem': 'ירושלים',
           'Tel Aviv Yaffo': 'תל אביב יפו',
           'Haifa': 'חיפה',
@@ -114,3 +115,22 @@ CITIES = {'Jerusalem': 'ירושלים',
           'Aluma': 'אלומה',
           'Caesarea': 'קיסריה',
           'Gedera': 'גדרה'}
+
+# dictionary mapping spelling differences of cities in API records vs. preloaded cities in KOMO website
+CITIES_API_KOMO = {'בני עי"ש': 'בני עייש',
+                   'בנימינה-גבעת עדה': 'בנימינה-גבעת עדה*',
+                   'מודיעין-מכבים-רעות': 'מודיעין-מכבים-רעות*',
+                   'קרית אונו': 'קריית אונו',
+                   'קרית ארבע': 'קריית ארבע',
+                   'קרית אתא': 'קריית אתא',
+                   'קרית ביאליק': 'קריית ביאליק',
+                   'קרית גת': 'קריית גת',
+                   'קרית ים': 'קריית ים',
+                   'קרית מוצקין': 'קריית מוצקין',
+                   'קרית מלאכי': 'קריית מלאכי',
+                   'קרית עקרון': 'קריית עקרון',
+                   'קרית שמונה': 'קריית שמונה',
+                   'תל אביב - יפו': 'תל אביב יפו'}
+
+API_DOMAIN = 'https://data.gov.il'
+API_URL = 'https://data.gov.il/api/3/action/datastore_search?resource_id=64edd0ee-3d5d-43ce-8562-c336c24dbc1f'

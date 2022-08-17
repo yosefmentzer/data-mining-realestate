@@ -74,12 +74,23 @@ def create_db(connection):
                     date date,\
                     price int\
                     );')
+        sql.append('CREATE TABLE demographics (\
+                    city_id int PRIMARY KEY,\
+                    total_pop int,\
+                    age_0_5 int,\
+                    age_6_18 int,\
+                    age_19_45 int,\
+                    age_46_55 int,\
+                    age_56_64 int,\
+                    age_65_plus int\
+                    );')
         sql.append('ALTER TABLE properties ADD FOREIGN KEY (property_type_id) REFERENCES property_types (id);')
         sql.append('ALTER TABLE properties ADD FOREIGN KEY (ad_type_id) REFERENCES ad_types (id);')
         sql.append('ALTER TABLE properties ADD FOREIGN KEY (city_id) REFERENCES cities (id);')
         sql.append('ALTER TABLE properties ADD FOREIGN KEY (contact_id) REFERENCES contacts (id);')
         sql.append('ALTER TABLE property_details ADD FOREIGN KEY (property_id) REFERENCES properties (id);')
         sql.append('ALTER TABLE prices ADD FOREIGN KEY (property_id) REFERENCES properties (id);')
+        sql.append('ALTER TABLE demographics ADD FOREIGN KEY (city_id) REFERENCES cities (id);')
         for command in sql:
             cursor.execute(command)
         connection.commit()
