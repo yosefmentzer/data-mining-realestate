@@ -20,7 +20,7 @@ From the terminal:
 ```bash
 python createdb.py
 ```
-updatedb.py has code to update the database, queryapi.qy has code to query the API and config.py has configuration/internal variables. They will be called by realestatescraper.py, so you don't have to worry about them. Just have them on your system.
+updatedb.py has code to update the database, queryapi.py has code to query the API and config.py has configuration/internal variables. They will be called by realestatescraper.py, so you don't have to worry about them. Just have them on your system.
 
 ## Usage
 From the terminal:
