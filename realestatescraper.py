@@ -360,7 +360,10 @@ def parse_detailed_ad_page(soup, ad_id, property_type, ad_type, today):
 
     # get tag with contact type: private individual or real estate agent
     contact_tag = soup.find('div', attrs={'class': re.compile("mefarsemNew")})
-    details['contact_type'] = contact_tag.string.strip()
+    if contact_tag:
+        details['contact_type'] = contact_tag.string.strip()
+    else:
+        details['contact_type'] = 'מפרטי'  # contact assumed to be private individual if not extracted from tag
     # for real estate agents, get office name and website id
     if soup.find('span', attrs={'class': 'misradName'}):
         details['contact_office'] = soup.find('span', attrs={'class': 'misradName'}).string
