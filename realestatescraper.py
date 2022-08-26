@@ -494,7 +494,11 @@ def scrape(property_types, ad_types, city_param):
             # parse all detailed ad pages (for the ads in the first 2nd level result page)
             for soup_ad_page1 in soup_ads_page1_dic.keys():
                 ad_id = ad_urls[resps_ads_page1_dic[soup_ads_page1_dic[soup_ad_page1]]]
-                details = parse_detailed_ad_page(soup_ad_page1, ad_id, property_type, ad_type, today)
+                try:
+                    details = parse_detailed_ad_page(soup_ad_page1, ad_id, property_type, ad_type, today)
+                except Exception:
+                    logger.error(repr(e))
+                    continue
                 details_dic[ad_id] = details
 
             # scrape and parse all detailed ad pages for remainder 2nd level result pages (2nd on)
@@ -518,7 +522,11 @@ def scrape(property_types, ad_types, city_param):
                 # parse all detailed ad pages (for ads in remainder 2nd level result pages)
                 for s in s_ads_otherpages_dic.keys():
                     ad_id = ad_urls[resps_ads_otherpages_dic[s_ads_otherpages_dic[s]]]
-                    details = parse_detailed_ad_page(s, ad_id, property_type, ad_type, today)
+                    try:
+                        details = parse_detailed_ad_page(s, ad_id, property_type, ad_type, today)
+                    except Exception as e:
+                        logger.error(repr(e))
+                        continue
                     details_dic[ad_id] = details
 
     return details_dic
