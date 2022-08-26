@@ -7,10 +7,14 @@ import pymysql.cursors
 import config
 import configparser
 
+import updatedb
+
 
 def create_db(connection):
     with connection.cursor() as cursor:
-        sql = [f'CREATE DATABASE {config.DB_NAME};']
+        sql = []
+        if not updatedb.query_db(f"SHOW DATABASES LIKE '{config.DB_NAME}' ", connection):
+            sql.append(f'CREATE DATABASE {config.DB_NAME};')
         sql.append(f'USE {config.DB_NAME};')
         sql.append('CREATE TABLE properties ( \
                     id int PRIMARY KEY AUTO_INCREMENT, \
