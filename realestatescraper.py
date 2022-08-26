@@ -499,7 +499,8 @@ def scrape(property_types, ad_types, city_param):
                 except Exception as e:
                     logger.error(repr(e))
                     continue
-                details_dic[ad_id] = details
+                if details:
+                    details_dic[ad_id] = details
 
             # scrape and parse all detailed ad pages for remainder 2nd level result pages (2nd on)
             resps_pages = get_responses_grequests(page_urls)
@@ -527,7 +528,8 @@ def scrape(property_types, ad_types, city_param):
                     except Exception as e:
                         logger.error(repr(e))
                         continue
-                    details_dic[ad_id] = details
+                    if details:
+                        details_dic[ad_id] = details
 
     return details_dic
 
