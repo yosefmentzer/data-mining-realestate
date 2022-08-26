@@ -10,8 +10,8 @@ import configparser
 
 def create_db(connection):
     with connection.cursor() as cursor:
-        sql = ['CREATE DATABASE realestate;']
-        sql.append('USE realestate;')
+        sql = [f'CREATE DATABASE {config.DB_NAME};']
+        sql.append(f'USE {config.DB_NAME};')
         sql.append('CREATE TABLE properties ( \
                     id int PRIMARY KEY AUTO_INCREMENT, \
                     website_id int, \

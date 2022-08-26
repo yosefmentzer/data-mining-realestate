@@ -149,3 +149,9 @@ credentials.ini
 # zip
 *.zip
 
+# checker comments folder
+checker_comments/
+
+# AWS folder
+AWS/
+

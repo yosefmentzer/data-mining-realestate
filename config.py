@@ -1,5 +1,7 @@
 """configuration file for Real Estate scraper"""
 
+DB_NAME = 'yosef'
+
 DEFAULT_TSIZE = 300
 
 BOOLEAN_FEATURES = ['mamad', 'mirpeset', 'mahsan', 'soragim', 'mizug',

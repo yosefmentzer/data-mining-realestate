@@ -18,9 +18,9 @@ def connect(cred):
 
 
 def use_db(connection):
-    """ use 'realestate' database """
+    """ use database """
     with connection.cursor() as cursor:
-        sql = 'USE realestate;'
+        sql = f'USE {config.DB_NAME};'
         cursor.execute(sql)
         connection.commit()
 
