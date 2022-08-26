@@ -323,16 +323,24 @@ def parse_detailed_ad_page(soup, ad_id, property_type, ad_type, today):
 
     # get tag and strings with data on rooms, floor of the property, size in m2 and entry date.
     firstinfo_tags = soup.find_all('div', attrs={'class': 'firstInfo'})
-    # rooms may be fractional, such as '2.5'
-    details['rooms'] = (firstinfo_tags[0].string.strip())
-    # floor is normally numeric, but may be "קרקע"
-    details['floor_property'] = (firstinfo_tags[1].string.strip())
-    details['size_m2'] = (firstinfo_tags[2].string.strip())
-    # entry dates may be a string like "גמיש" or an actual date.
-    details['entry_date'] = firstinfo_tags[3].string.strip() if len(firstinfo_tags) > 3 else None
+    if firstinfo_tags:
+        # rooms may be fractional, such as '2.5'
+        details['rooms'] = (firstinfo_tags[0].string.strip())
+        # floor is normally numeric, but may be "קרקע"
+        details['floor_property'] = (firstinfo_tags[1].string.strip())
+        details['size_m2'] = (firstinfo_tags[2].string.strip())
+        # entry dates may be a string like "גמיש" or an actual date.
+        details['entry_date'] = firstinfo_tags[3].string.strip() if len(firstinfo_tags) > 3 else None
+    else:
+        details['rooms'] = None
+        details['floor_property'] = None
+        details['size_m2'] = None
+        details['entry_date'] = None
 
     # get text description, total floors in building, condo fee and city property tax (arnona)
-    details['description'] = soup.find('div', attrs={'id': 'teurWrap'}).string.strip()
+    details['description'] = (soup.find('div', attrs={'id': 'teurWrap'}).string.strip()
+                              if soup.find('div', attrs={'id': 'teurWrap'})
+                              else None)
     details['floors_total'] = (soup.find('li', attrs={'class': 'floorTotal'}).strong.string
                                if soup.find('li', attrs={'class': 'floorTotal'})
                                else None)
