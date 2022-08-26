@@ -286,7 +286,7 @@ def parse_detailed_ad_page(soup, ad_id, property_type, ad_type, today):
                               if len(addresstop_fulltext.split(', ')) > 1
                               else 'לא צוינה כתובת')
     else:
-        details['address'] = 'לא נשלף'
+        return  # if there is no addresstop_tag, the ad link is not active and there is no detailed info. Skip ad.
 
     # get tag and string with neighborhood. If there is no neighborhood, register 'לא צוינה שכונה'
     addresbottom_tag = soup.find('div', attrs={'class': 'addresBottom'})
@@ -496,7 +496,7 @@ def scrape(property_types, ad_types, city_param):
                 ad_id = ad_urls[resps_ads_page1_dic[soup_ads_page1_dic[soup_ad_page1]]]
                 try:
                     details = parse_detailed_ad_page(soup_ad_page1, ad_id, property_type, ad_type, today)
-                except Exception:
+                except Exception as e:
                     logger.error(repr(e))
                     continue
                 details_dic[ad_id] = details
