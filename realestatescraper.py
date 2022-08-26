@@ -280,20 +280,30 @@ def parse_detailed_ad_page(soup, ad_id, property_type, ad_type, today):
     # the string comes with \xa0 instead of some spaces, so we need to normalize it.
     # Example: before normalization: 'דירה להשכרה,\xa0פרופ’ מחרז אברהם\xa04'
     #          after normalization: 'דירה להשכרה, פרופ’ מחרז אברהם 4'
-    addresstop_fulltext = unicodedata.normalize("NFKD", addresstop_tag.find('span').string.strip())
-    details['address'] = (addresstop_fulltext.split(', ')[-1]
-                          if len(addresstop_fulltext.split(', ')) > 1
-                          else 'לא צוינה כתובת')
+    if addresstop_tag:
+        addresstop_fulltext = unicodedata.normalize("NFKD", addresstop_tag.find('span').string.strip())
+        details['address'] = (addresstop_fulltext.split(', ')[-1]
+                              if len(addresstop_fulltext.split(', ')) > 1
+                              else 'לא צוינה כתובת')
+    else:
+        details['address'] = 'לא נשלף'
 
     # get tag and string with neighborhood. If there is no neighborhood, register 'לא צוינה שכונה'
     addresbottom_tag = soup.find('div', attrs={'class': 'addresBottom'})
-    addresbottom_fulltext = unicodedata.normalize("NFKD", addresbottom_tag.find('span').string.strip())
-    details['neighborhood'] = (addresbottom_fulltext.split(', ')[0]
-                               if len(addresbottom_fulltext.split(', ')) > 1
-                               else 'לא צוינה שכונה')
+    if addresbottom_tag:
+        addresbottom_fulltext = unicodedata.normalize("NFKD", addresbottom_tag.find('span').string.strip())
+        details['neighborhood'] = (addresbottom_fulltext.split(', ')[0]
+                                   if len(addresbottom_fulltext.split(', ')) > 1
+                                   else 'לא צוינה שכונה')
+    else:
+        addresbottom_fulltext = None
+        details['neighborhood'] = 'לא נשלף'
 
     # record city name as extracted from ad page.
-    details['city'] = addresbottom_fulltext.split(', ')[-1]
+    if addresbottom_fulltext:
+        details['city'] = addresbottom_fulltext.split(', ')[-1]
+    else:
+        details['city'] = 'לא נשלף'
 
     # get price
     price_raw = soup.find(attrs={'class': re.compile("ModaaWDetailsValue")}).string
