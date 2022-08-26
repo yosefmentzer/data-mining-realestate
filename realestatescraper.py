@@ -306,11 +306,17 @@ def parse_detailed_ad_page(soup, ad_id, property_type, ad_type, today):
         details['city'] = 'לא נשלף'
 
     # get price
-    price_raw = soup.find(attrs={'class': re.compile("ModaaWDetailsValue")}).string
+    if soup.find(attrs={'class': re.compile("ModaaWDetailsValue")}):
+        price_raw = soup.find(attrs={'class': re.compile("ModaaWDetailsValue")}).string
+    else:
+        price_raw = None
     # exclude the shekel symbol and commas from the string.
     # ads with no price info have "לא צוין מחיר" in this field and map to None.
-    if re.sub("[^0-9]", "", price_raw):
-        price = re.sub("[^0-9]", "", price_raw)
+    if price_raw:
+        if re.sub("[^0-9]", "", price_raw):
+            price = re.sub("[^0-9]", "", price_raw)
+        else:
+            price = None
     else:
         price = None
     details['price'] = price
