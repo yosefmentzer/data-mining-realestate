@@ -614,9 +614,6 @@ def main():
     if not onlyapi:
         details_dic = scrape(property_types, ad_types, city_param)
         if details_dic:
-            import json
-            with open('result.json', 'w') as fp:
-                json.dump(details_dic, fp)
             feed_db_after_scraping(details_dic, tsize)
             print(f'The database was updated with {len(details_dic)} records obtained via scraping.\n')
     if api:
