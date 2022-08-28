@@ -173,10 +173,17 @@ def get_city_id_foreign_key(result, connection, t):
     :param t: current transaction count
     :return: city_id, updated t
     """
-    if not query_db(f'SELECT * FROM cities WHERE name_heb = "{result["city"]}"', connection):
-        insert_city((result["city"]), connection)
+    city_name = result["city"]
+    # deal with quotes in city_name so that the string SQL query does not crash
+    if '"' in city_name:
+        sql = f"""SELECT * FROM cities WHERE name_heb = '{city_name}' """
+    else:
+        sql = f"""SELECT * FROM cities WHERE name_heb = "{city_name}" """
+
+    if not query_db(sql, connection):
+        insert_city(city_name, connection)
         t += 1
-    city_id = query_db(f'SELECT * FROM cities WHERE name_heb = "{result["city"]}"', connection)[0]['id']
+    city_id = query_db(sql, connection)[0]['id']
 
     return city_id, t
 

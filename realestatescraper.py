@@ -181,17 +181,18 @@ def get_city_urls(city_param, property_type, soup):
     :param soup: parsed response of current quicklink webpage.
     :return: {cityname: url}. cityname in Hebrew, as it is extracted from quicklink webpage
                                 and optionally limited by city_param.
+    Example: https://www.komo.co.il/code/nadlan/apartments-for-rent.asp?nehes=1&cityName=%D7%99%D7%A8%D7%95%D7%A9%D7%9C%D7%99%D7%9D
     """
     if city_param:
         city_urls = {elt.a.get('cityname'): ''.join(['https://www.komo.co.il/',  # domain
-                                                     elt.a.get('href').split('?')[0],  # route before params
+                                                     elt.a.get('href').split('?')[0],  # route, has info on ad type
                                                      '?nehes=',  # first param name
                                                      str(property_type),  # first param value
                                                      '&cityname=',  # second param name
                                                      urllib.parse.quote(elt.a.get('cityname'))  # second param value.
                                                      ])
-                     for elt in soup.find_all('div', attrs={'class': 'listFloatItem'})
-                     if elt.a.get('cityname') == config.CITIES[city_param]}
+                     for elt in soup.find_all('div', attrs={'class': 'listFloatItem'})  # city url must be in quicklink
+                     if elt.a.get('cityname') == config.CITIES[city_param]}  # filter in relevant city
     else:
         city_urls = {elt.a.get('cityname'): ''.join(['https://www.komo.co.il/',
                                                      elt.a.get('href').split('?')[0],
@@ -301,7 +302,13 @@ def parse_detailed_ad_page(soup, ad_id, property_type, ad_type, today):
 
     # record city name as extracted from ad page.
     if addresbottom_fulltext:
-        details['city'] = addresbottom_fulltext.split(', ')[-1]
+        city_name_in_website = addresbottom_fulltext.split(', ')[-1]
+        if "'" in city_name_in_website and '"' in city_name_in_website:
+            # if there are both single and double quotes in city_name_in_website,
+            # take out the single quote, as we will need to build string SQL query based on it.
+            details['city'] = city_name_in_website.replace("'", "")
+        else:
+            details['city'] = city_name_in_website
     else:
         details['city'] = 'לא נשלף'
 
@@ -451,9 +458,13 @@ def scrape(property_types, ad_types, city_param):
 
         city_urls = get_city_urls(city_param, property_type, soup)  # dictionary {cityname: url}
         if not city_urls:
-            print('This search did not match any result page in the website.\n'
-                  'Try again with different parameters.\n')
-            return
+            if city_param:
+                print(f'The search for property type: {property_type}, ad type: {ad_type}, city: {city_param}\n'
+                      f'did not match any result page in the website.\n')
+            else:
+                print(f'The search for property type: {property_type}, ad type: {ad_type}\n'
+                      f'did not match any result page in the website.\n')
+            continue
         city_urls_inv = {v: k for k, v in city_urls.items()}
 
         print(f'Scraping {len(city_urls)} city page(s) for '
@@ -478,7 +489,7 @@ def scrape(property_types, ad_types, city_param):
             pages = get_pages(soup_city)
             page_urls = get_page_urls(city_url, pages, ad_type)  # list of urls for all pages of this city
             n_pages = max([int(elt) for elt in pages]) if pages else 1
-            print(f'Number of result pages for the current search: {n_pages}.')
+            print(f'Number of result pages for the current search: {n_pages}.\n')
 
             # get ad_ids for the first result page (already parsed)
             ad_ids = get_ad_ids(soup_city)
@@ -604,8 +615,10 @@ def main():
         details_dic = scrape(property_types, ad_types, city_param)
         if details_dic:
             feed_db_after_scraping(details_dic, tsize)
+            print(f'The database was updated with {len(details_dic)} records obtained via scraping.\n')
     if api:
         query_api_feed_db(tsize)
+        print('The database was updated with data from the API.')
 
 
 if __name__ == '__main__':
