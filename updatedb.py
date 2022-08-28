@@ -93,7 +93,8 @@ def update_property(website_id, updates, connection):
         sql_head = 'UPDATE properties SET '
         sql_middle = ','.join([f'{column} = {value}' for column, value in updates.items()])
         sql_tail = f' WHERE website_id = {website_id}'
-        cursor.execute("".join([sql_head, sql_middle, sql_tail]))
+        sql = ''.join([sql_head, sql_middle, sql_tail]).replace('None', 'NULL')  # None must be replaced by NULL
+        cursor.execute(sql)
 
 
 def update_property_details(property_id, updates, connection):
@@ -115,7 +116,9 @@ def update_property_details(property_id, updates, connection):
         sql_middle = ','.join(sql_middle_l1 + sql_middle_l2 + sql_middle_l3)
 
         sql_tail = f' WHERE property_id = {property_id}'
-        cursor.execute(''.join([sql_head, sql_middle, sql_tail]))
+        sql = ''.join([sql_head, sql_middle, sql_tail]).replace('None', 'NULL')  # None must be replaced by NULL
+
+        cursor.execute(sql)
 
 
 def update_demographics(city_id, updates, connection):
@@ -125,7 +128,8 @@ def update_demographics(city_id, updates, connection):
         sql_head = 'UPDATE demographics SET '
         sql_middle = ','.join([f'{column} = {value}' for column, value in updates.items()])
         sql_tail = f' WHERE city_id = {city_id}'
-        cursor.execute("".join([sql_head, sql_middle, sql_tail]))
+        sql = ''.join([sql_head, sql_middle, sql_tail]).replace('None', 'NULL')  # None must be replaced by NULL
+        cursor.execute(sql)
 
 
 def insert_demographics(data, connection):
