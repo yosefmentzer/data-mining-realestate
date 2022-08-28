@@ -417,7 +417,7 @@ def get_agent_details(luachnum, modaanum):
     return agent_details
 
 
-def scrape(property_types, ad_types, city_param):
+def scrape(property_types, ad_types, city_param, tsize):
     """
     this function performs the scraping activity.
     :param property_types: property types to scrape.
@@ -512,6 +512,10 @@ def scrape(property_types, ad_types, city_param):
                     continue
                 if details:
                     details_dic[ad_id] = details
+                    if len(details_dic) > config.DEFAULT_SCRAPEDICSIZE:
+                        feed_db_after_scraping(details_dic, tsize)
+                        print(f'The database was updated with {len(details_dic)} records obtained via scraping.\n')
+                        details_dic = {}
 
             # scrape and parse all detailed ad pages for remainder 2nd level result pages (2nd on)
             resps_pages = get_responses_grequests(page_urls)
@@ -541,6 +545,10 @@ def scrape(property_types, ad_types, city_param):
                         continue
                     if details:
                         details_dic[ad_id] = details
+                        if len(details_dic) > config.DEFAULT_SCRAPEDICSIZE:
+                            feed_db_after_scraping(details_dic, tsize)
+                            print(f'The database was updated with {len(details_dic)} records obtained via scraping.\n')
+                            details_dic = {}
 
     return details_dic
 
@@ -612,7 +620,7 @@ def main():
     else:
         return
     if not onlyapi:
-        details_dic = scrape(property_types, ad_types, city_param)
+        details_dic = scrape(property_types, ad_types, city_param, tsize)
         if details_dic:
             feed_db_after_scraping(details_dic, tsize)
             print(f'The database was updated with {len(details_dic)} records obtained via scraping.\n')

@@ -4,6 +4,8 @@ DB_NAME = 'yosef'
 
 DEFAULT_TSIZE = 300
 
+DEFAULT_SCRAPEDICSIZE = 1000
+
 BOOLEAN_FEATURES = ['mamad', 'mirpeset', 'mahsan', 'soragim', 'mizug',
                     'riut', 'gisha', 'maalit', 'hania', 'shutafim',
                     'pets', 'boiler']
