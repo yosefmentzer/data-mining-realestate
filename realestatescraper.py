@@ -561,7 +561,7 @@ def feed_db_after_scraping(details_dic, tsize):
     :param details_dic: dictionary with scraping results
     :param tsize: transaction size (defined by user or default value)
     """
-    print(f'A total of {len(details_dic)} ads were scraped.\n')
+    print(f'{len(details_dic)} ads were scraped.\n')
     cred = configparser.ConfigParser()
     cred.read('credentials.ini')
     connection = updatedb.connect(cred)
